@@ -18,11 +18,5 @@
     <ClCompile Include="CSCI570_Project.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="basic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="efficient.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

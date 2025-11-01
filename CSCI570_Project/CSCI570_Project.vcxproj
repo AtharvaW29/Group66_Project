@@ -123,9 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="basic.cpp" />
     <ClCompile Include="CSCI570_Project.cpp" />
-    <ClCompile Include="efficient.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

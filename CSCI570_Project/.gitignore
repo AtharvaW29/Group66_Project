@@ -426,3 +426,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Test outputs
+CSCI570_UnitTest/TestData/outputs/*

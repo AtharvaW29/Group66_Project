@@ -1,13 +1,4 @@
 // CSCI570_Project.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
-#include <iostream>
-
-int main()
-{
-    std::cout << "Hello World!\n";
-}
-
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
 
@@ -18,3 +9,40 @@ int main()
 //   4. Use the Error List window to view errors
 //   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
 //   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+
+// Function that writes text to a file
+bool WriteToFile(const std::string& filename, const std::string& text)
+{
+  std::ofstream file(filename);
+  if (!file.is_open())
+  {
+    std::cerr << "Error: could not open file for writing\n";
+    return false;
+  }
+
+  file << text;
+  file.close();
+  return true;
+}
+
+void Basic(std::string inputFile, std::string outputFile)
+{
+  std::string answer = "example_text"; //TODO: assign the answer here
+  WriteToFile(outputFile, answer);
+}
+
+void Efficient(std::string inputFile, std::string outputFile)
+{
+  std::string answer = "example_text"; //TODO: assign the answer here
+  WriteToFile(outputFile, answer);
+}
+
+int main()
+{
+    std::cout << "Hello World!\n"; //TODO: implement the main program
+}
