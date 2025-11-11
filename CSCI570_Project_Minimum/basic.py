@@ -1,8 +1,15 @@
+"""
+CSCI 570 - Sequence Alignment Project
+Basic Algorithm Implementation (Dynamic Programming)
+
+TODO: Implement the basic sequence alignment algorithm using dynamic programming.
+"""
+
 import sys
 import time
 import psutil
 
-# Constants
+# Constants - DO NOT MODIFY
 DELTA = 30
 ALPHA = {
     ('A', 'A'): 0, ('A', 'C'): 110, ('A', 'G'): 48, ('A', 'T'): 94,
@@ -16,17 +23,28 @@ def generate_string(base_string, indices):
     """
     Generate string by iteratively inserting the string into itself.
 
+    TODO: Implement the string generation logic.
+
+    Algorithm hint:
+    - For each index in indices:
+        - Insert the current string into itself after position 'index'
+        - This should double the length of the string each time
+
     Args:
-        base_string: The initial base string
-        indices: List of indices where insertions occur
+        base_string (str): The initial base string
+        indices (list): List of indices where insertions occur
 
     Returns:
-        Final generated string after all insertions
+        str: Final generated string after all insertions
+
+    Example:
+        generate_string("ACTG", [3]) should return "ACTGACTG"
     """
     result = base_string
-    for index in indices:
-        # Insert result into itself after position 'index'
-        result = result[:index + 1] + result + result[index + 1:]
+
+    # TODO: Implement insertion logic
+    # Hint: For each index, you need to split the string and insert itself
+
     return result
 
 
@@ -34,37 +52,28 @@ def parse_input_file(input_path):
     """
     Parse input file and generate the two strings.
 
+    TODO: Implement input file parsing.
+
+    Algorithm hint:
+    - Read all lines from file
+    - Parse first string: base string followed by insertion indices
+    - Parse second string: base string followed by insertion indices
+    - Use generate_string() for both
+
     Args:
-        input_path: Path to input file
+        input_path (str): Path to input file
 
     Returns:
-        Tuple of (string1, string2)
+        tuple: (string1, string2) - the two generated strings
     """
-    with open(input_path, 'r') as f:
-        lines = [line.strip() for line in f.readlines()]
 
-    i = 0
-    # Parse first string
-    base_string1 = lines[i]
-    i += 1
+    # TODO: Read file and parse contents
+    # TODO: Extract base string 1 and its indices
+    # TODO: Extract base string 2 and its indices
+    # TODO: Generate both strings using generate_string()
 
-    indices1 = []
-    while i < len(lines) and lines[i] and lines[i][0].isdigit():
-        indices1.append(int(lines[i]))
-        i += 1
-
-    string1 = generate_string(base_string1, indices1)
-
-    # Parse second string
-    base_string2 = lines[i]
-    i += 1
-
-    indices2 = []
-    while i < len(lines) and lines[i] and lines[i][0].isdigit():
-        indices2.append(int(lines[i]))
-        i += 1
-
-    string2 = generate_string(base_string2, indices2)
+    string1 = ""
+    string2 = ""
 
     return string1, string2
 
@@ -73,94 +82,90 @@ def sequence_alignment(X, Y, delta, alpha):
     """
     Perform sequence alignment using dynamic programming.
 
+    TODO: Implement the DP algorithm for sequence alignment.
+
+    Algorithm hint:
+    1. Create a DP table of size (len(X)+1) x (len(Y)+1)
+    2. Initialize base cases (first row and column)
+    3. Fill the DP table using the recurrence relation
+    4. Backtrack from dp[m][n] to dp[0][0] to construct alignment
+
+    Recurrence relation:
+        dp[i][j] = min(
+            dp[i-1][j-1] + alpha[X[i-1]][Y[j-1]],  # match/mismatch
+            dp[i-1][j] + delta,                      # gap in Y
+            dp[i][j-1] + delta                       # gap in X
+        )
+
     Args:
-        X: First string
-        Y: Second string
-        delta: Gap penalty
-        alpha: Dictionary of mismatch costs
+        X (str): First string
+        Y (str): Second string
+        delta (int): Gap penalty
+        alpha (dict): Dictionary of mismatch costs
 
     Returns:
-        Tuple of (cost, aligned_X, aligned_Y)
+        tuple: (cost, aligned_X, aligned_Y)
+            - cost: Minimum alignment cost
+            - aligned_X: First string with gaps (using '_')
+            - aligned_Y: Second string with gaps (using '_')
     """
     m, n = len(X), len(Y)
 
-    # Initialize DP table
-    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    # TODO: Create DP table (2D array)
+    # Hint: Use list comprehension or nested loops
 
-    # Base cases
-    for i in range(m + 1):
-        dp[i][0] = i * delta
-    for j in range(n + 1):
-        dp[0][j] = j * delta
+    # TODO: Initialize base cases
+    # dp[i][0] = ?
+    # dp[0][j] = ?
 
-    # Fill DP table
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            # Case 1: Match/mismatch
-            match_cost = dp[i - 1][j - 1] + alpha[(X[i - 1], Y[j - 1])]
+    # TODO: Fill DP table
+    # Use nested loops for i from 1 to m and j from 1 to n
 
-            # Case 2: Gap in Y (X[i-1] aligns with gap)
-            gap_y = dp[i - 1][j] + delta
+    # TODO: Backtrack to find alignment
+    # Start from dp[m][n] and work backwards to dp[0][0]
+    # Build aligned strings by determining which case was chosen at each step
 
-            # Case 3: Gap in X (Y[j-1] aligns with gap)
-            gap_x = dp[i][j - 1] + delta
+    cost = 0
+    aligned_x = ""
+    aligned_y = ""
 
-            dp[i][j] = min(match_cost, gap_y, gap_x)
-
-    # Backtrack to find alignment
-    aligned_x = []
-    aligned_y = []
-
-    i, j = m, n
-    while i > 0 or j > 0:
-        if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + alpha[(X[i - 1], Y[j - 1])]:
-            # Match/mismatch
-            aligned_x.append(X[i - 1])
-            aligned_y.append(Y[j - 1])
-            i -= 1
-            j -= 1
-        elif i > 0 and dp[i][j] == dp[i - 1][j] + delta:
-            # Gap in Y
-            aligned_x.append(X[i - 1])
-            aligned_y.append('_')
-            i -= 1
-        else:
-            # Gap in X
-            aligned_x.append('_')
-            aligned_y.append(Y[j - 1])
-            j -= 1
-
-    # Reverse alignments (we built them backwards)
-    aligned_x.reverse()
-    aligned_y.reverse()
-
-    return dp[m][n], ''.join(aligned_x), ''.join(aligned_y)
+    return cost, aligned_x, aligned_y
 
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
     """
-    Calculate the cost of a given alignment.
+    Calculate the cost of a given alignment (for verification).
+
+    TODO: Implement cost calculation.
+
+    Algorithm hint:
+    - Iterate through both aligned strings position by position
+    - If either has a gap ('_'), add delta to cost
+    - Otherwise, add alpha[char1][char2] to cost
 
     Args:
-        aligned1: First aligned string (with gaps as '_')
-        aligned2: Second aligned string (with gaps as '_')
-        delta: Gap penalty
-        alpha: Dictionary of mismatch costs
+        aligned1 (str): First aligned string (with gaps as '_')
+        aligned2 (str): Second aligned string (with gaps as '_')
+        delta (int): Gap penalty
+        alpha (dict): Dictionary of mismatch costs
 
     Returns:
-        Total alignment cost
+        int: Total alignment cost
     """
     cost = 0
-    for i in range(len(aligned1)):
-        if aligned1[i] == '_' or aligned2[i] == '_':
-            cost += delta
-        else:
-            cost += alpha[(aligned1[i], aligned2[i])]
+
+    # TODO: Calculate cost by iterating through aligned strings
+
     return cost
 
 
 def process_memory():
-    """Get current memory usage in KB"""
+    """
+    Get current memory usage in KB.
+
+    Returns:
+        int: Memory consumed in kilobytes
+    """
     process = psutil.Process()
     memory_info = process.memory_info()
     memory_consumed = int(memory_info.rss / 1024)
@@ -171,48 +176,56 @@ def format_output(output_path, cost, aligned1, aligned2, time_ms, memory_kb):
     """
     Write output to file in required format.
 
+    Output format (5 lines):
+    1. Cost (integer)
+    2. First aligned string
+    3. Second aligned string
+    4. Time in milliseconds (float)
+    5. Memory in kilobytes (float)
+
     Args:
-        output_path: Path to output file
-        cost: Alignment cost
-        aligned1: First aligned string
-        aligned2: Second aligned string
-        time_ms: Time in milliseconds
-        memory_kb: Memory in kilobytes
+        output_path (str): Path to output file
+        cost (int): Alignment cost
+        aligned1 (str): First aligned string
+        aligned2 (str): Second aligned string
+        time_ms (float): Time in milliseconds
+        memory_kb (float): Memory in kilobytes
     """
-    with open(output_path, 'w') as f:
-        f.write(f"{cost}\n")
-        f.write(f"{aligned1}\n")
-        f.write(f"{aligned2}\n")
-        f.write(f"{time_ms}\n")
-        f.write(f"{memory_kb}\n")
+
+    # TODO: Write output to file
+    # Make sure to write exactly 5 lines in the correct order
+
+    pass
 
 
 def main():
-    """Main function to run the alignment algorithm"""
-    if len(sys.argv) != 3:
-        print("Usage: python basic.py <input_file> <output_file>")
-        sys.exit(1)
+    """
+    Main function to run the alignment algorithm.
 
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
+    TODO: Implement the main workflow:
+    1. Parse command line arguments
+    2. Read and parse input file
+    3. Measure time and memory
+    4. Run alignment algorithm
+    5. Write output file
+    """
 
-    # Parse input
-    string1, string2 = parse_input_file(input_path)
+    # TODO: Check command line arguments
+    # Should be: python basic.py <input_file> <output_file>
 
-    # Measure time and memory
-    start_time = time.time()
+    # TODO: Parse input file to get the two strings
 
-    # Run alignment algorithm
-    cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+    # TODO: Measure start time
 
-    end_time = time.time()
-    time_ms = (end_time - start_time) * 1000
+    # TODO: Run sequence alignment
 
-    # Measure memory after computation
-    memory_kb = process_memory()
+    # TODO: Measure end time
 
-    # Write output
-    format_output(output_path, cost, aligned1, aligned2, time_ms, memory_kb)
+    # TODO: Get memory usage
+
+    # TODO: Write output to file
+
+    pass
 
 
 if __name__ == "__main__":

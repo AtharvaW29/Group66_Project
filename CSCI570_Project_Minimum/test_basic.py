@@ -364,12 +364,12 @@ class TestMemoryAndTime:
 
     def test_time_measurement_positive(self):
         """Test that time measurement returns positive values"""
-        # This would test your time measurement function
+        # This would test time measurement function
         pass
 
     def test_memory_measurement_positive(self):
         """Test that memory measurement returns positive values"""
-        # This would test your memory measurement function
+        # This would test memory measurement function
         pass
 
 
