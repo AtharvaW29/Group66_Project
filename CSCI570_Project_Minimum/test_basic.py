@@ -19,6 +19,7 @@ ALPHA = {
 }
 
 
+
 class TestStringGeneration:
     """Test the string generation mechanism"""
 
@@ -145,7 +146,7 @@ class TestAlignmentCost:
         aligned1 = "_A_CA_CACT__G__A_C_TAC_TGACTG_GTGA__C_TACTGACTGGACTGACTACTGACTGGTGACTACT_GACTG_G"
         aligned2 = "TATTATTA_TACGCTATTATACGCGAC_GCG_GACGCGTA_T_AC__G_CT_ATTA_T_AC__GCGAC_GC_GGAC_GCG"
         cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
-        assert cost == 1296  # Expected cost from example
+        assert cost == 1296
 
 
 class TestSequenceAlignment:
@@ -329,15 +330,15 @@ class TestIntegration:
         """Test complete pipeline from input to output"""
         # Create input file
         input_content = """ACTG
-3
-6
-1
-1
-TACG
-1
-2
-9
-2"""
+            3
+            6
+            1
+            1
+            TACG
+            1
+            2
+            9
+            2"""
         input_file = tmp_path / "input.txt"
         input_file.write_text(input_content)
 
