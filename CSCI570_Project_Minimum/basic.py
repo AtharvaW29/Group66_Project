@@ -55,6 +55,7 @@ def parse_input_file(file_path):
 def sequence_alignment(X, Y, delta, alpha):
     """
     Perform sequence alignment using dynamic programming.
+    Traceback priority: diagonal > left > up [Bois this should be same for all]
     """
     m, n = len(X), len(Y)
 
@@ -70,11 +71,10 @@ def sequence_alignment(X, Y, delta, alpha):
     # dp table
     for i in range(1, m + 1):
         for j in range(1, n + 1):
-            dp[i][j] = min(
-                dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]],
-                dp[i - 1][j] + delta,
-                dp[i][j - 1] + delta
-            )
+
+            dp[i][j] = min(dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]],
+                           dp[i - 1][j] + delta,
+                           dp[i][j - 1] + delta)
 
     minimum_alignment_cost = dp[m][n]
 
@@ -83,19 +83,34 @@ def sequence_alignment(X, Y, delta, alpha):
 
     i, j = m, n
     while i > 0 or j > 0:
-        if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]]:
-            aligned_x.append(X[i - 1])
+        if i == 0:
+            aligned_x.append('_')
             aligned_y.append(Y[j - 1])
-            i -= 1
             j -= 1
-        elif i > 0 and dp[i][j] == dp[i - 1][j] + delta:
+        elif j == 0:
             aligned_x.append(X[i - 1])
             aligned_y.append('_')
             i -= 1
         else:
-            aligned_x.append('_')
-            aligned_y.append(Y[j - 1])
-            j -= 1
+            match_cost = dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]]
+            insert_cost = dp[i][j - 1] + delta
+
+            # Diagonal
+            if dp[i][j] == match_cost:
+                aligned_x.append(X[i - 1])
+                aligned_y.append(Y[j - 1])
+                i -= 1
+                j -= 1
+            # Left
+            elif dp[i][j] == insert_cost:
+                aligned_x.append('_')
+                aligned_y.append(Y[j - 1])
+                j -= 1
+            # Up
+            else:
+                aligned_x.append(X[i - 1])
+                aligned_y.append('_')
+                i -= 1
 
     aligned_x.reverse()
     aligned_y.reverse()
