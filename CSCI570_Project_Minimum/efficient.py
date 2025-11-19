@@ -1,0 +1,166 @@
+import os.path
+import sys
+import time
+import psutil
+from pathlib import Path
+
+# Constants
+DELTA = 30
+ALPHA = {
+    ('A', 'A'): 0, ('A', 'C'): 110, ('A', 'G'): 48, ('A', 'T'): 94,
+    ('C', 'A'): 110, ('C', 'C'): 0, ('C', 'G'): 118, ('C', 'T'): 48,
+    ('G', 'A'): 48, ('G', 'C'): 118, ('G', 'G'): 0, ('G', 'T'): 110,
+    ('T', 'A'): 94, ('T', 'C'): 48, ('T', 'G'): 110, ('T', 'T'): 0
+}
+# input_dir = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases")
+
+def generate_string(base_string, indices):
+    for i in indices:
+        first_part = base_string[:i + 1]
+        second_part = base_string[i + 1:]
+        base_string = first_part + base_string + second_part
+
+    result = base_string
+
+    return result
+
+
+def parse_input_file(file_path):
+
+    with open(file_path, 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+
+    string1 = lines[0]
+    idx=1
+
+    indices1 = []
+    while lines[idx].isdigit():
+        indices1.append(int(lines[idx]))
+        idx += 1
+
+    string2 = lines[idx]
+    idx += 1
+
+    indices2 = []
+    while idx < len(lines):
+        indices2.append(int(lines[idx]))
+        idx += 1
+
+    output_string1 = generate_string(string1, indices1)
+    output_string2 = generate_string(string2, indices2)
+
+    return output_string1, output_string2
+
+
+def sequence_alignment(X, Y, delta, alpha):
+    """
+    Perform memory-efficient sequence alignment using divide and conquer approach.
+    """
+
+    minimum_alignment_cost = hirschberg(X, Y, delta, alpha)
+
+    #TODO: get alignments 
+    aligned_x = []
+    aligned_y = []
+    
+    return minimum_alignment_cost, aligned_x, aligned_y
+
+
+def hirschberg(X, Y, delta, alpha):
+    """
+    Hirschberg's algorithm for memory-efficient sequence alignment.
+    """
+    if len(X) == 0:
+        return delta * len(Y)
+    if len(Y) == 0:
+        return delta * len(X)
+    if len(X) == 1:
+        cost = delta * len(Y) # all gaps
+        if len(Y) >= 1:
+            for y in Y:
+                cost = min(cost, delta * (len(Y) - 1) + alpha[X[0], y]) # one match/mismatch
+        return cost
+    
+    k = get_optimal_split_point(X, Y, delta, alpha)
+    cost = 0
+    cost += hirschberg(X[:len(X)//2], Y[:k], delta, alpha)
+    cost += hirschberg(X[len(X)//2:], Y[k:], delta, alpha)
+
+    return cost #TODO: also return alignments
+
+
+def get_optimal_split_point(X, Y, delta, alpha):
+    """
+    Helper function to find the optimal split point in Hirschberg's algorithm.
+    """
+
+    #TODO: implement this function
+
+    return 0 # Placeholder for actual implementation
+
+
+def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
+    cost = 0
+
+    for i in range(len(aligned1)):
+        if aligned1[i] == '_' or aligned2[i] == '_':
+            cost += delta
+        else:
+            cost += alpha[aligned1[i], aligned2[i]]
+    return cost
+
+
+def process_memory():
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    memory_consumed = int(memory_info.rss / 1024)
+    return memory_consumed
+
+
+def format_output(output_path, cost, aligned1, aligned2, time_ms, memory_kb):
+    """Write alignment results to output file"""
+    output_dir = os.path.dirname(output_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    aligned1_str = ''.join(aligned1) if isinstance(aligned1, list) else aligned1
+    aligned2_str = ''.join(aligned2) if isinstance(aligned2, list) else aligned2
+
+    with open(output_path, "w") as f:
+        f.write(f"{cost}\n")
+        f.write(f"{aligned1_str}\n")
+        f.write(f"{aligned2_str}\n")
+        f.write(f"{time_ms}\n")
+        f.write(f"{memory_kb}\n")
+
+
+def main():
+    if len(sys.argv) !=3:
+        print("Expected python3/py efficient.py <input_file> <output_file>")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    string1, string2 = parse_input_file(input_path)
+
+    # Start
+    start_time = time.time()
+
+    # main function basic approach
+    min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+
+    cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
+    # End
+    end_time = time.time()
+    time_ms = (end_time - start_time)
+
+    # memory usage
+    memory = process_memory()
+
+    format_output(output_path, cost, aligned1, aligned2, time_ms, memory)
+    pass
+
+
+if __name__ == "__main__":
+    main()
