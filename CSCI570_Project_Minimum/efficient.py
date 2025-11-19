@@ -52,7 +52,7 @@ def parse_input_file(file_path):
     return output_string1, output_string2
 
 
-def sequence_alignment(X, Y, delta, alpha):
+def efficient_sequence_alignment(X, Y, delta, alpha):
     """
     Perform sequence alignment using dynamic programming.
     Traceback priority: diagonal > left > up [Bois this should be same for all]
@@ -167,7 +167,7 @@ def main():
     start_time = time.time()
 
     # main function basic approach
-    min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+    min_cost, aligned1, aligned2 = efficient_sequence_alignment(string1, string2, DELTA, ALPHA)
 
     cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
     # End
