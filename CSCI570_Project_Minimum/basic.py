@@ -172,7 +172,7 @@ def main():
     cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
     # End
     end_time = time.time()
-    time_ms = (end_time - start_time)
+    time_ms = (end_time - start_time) * 1000
 
     # memory usage
     memory = process_memory()
