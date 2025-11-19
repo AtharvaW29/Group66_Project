@@ -1,11 +1,16 @@
+import os.path
+import time
+
 import pytest
 import sys
-import os
+from pathlib import  Path
+import re
 from basic import (
     generate_string,
     sequence_alignment,
     calculate_alignment_cost,
     parse_input_file,
+    process_memory,
     format_output
 )
 
@@ -18,6 +23,7 @@ ALPHA = {
     ('T', 'A'): 94, ('T', 'C'): 48, ('T', 'G'): 110, ('T', 'T'): 0
 }
 
+input_dir = Path("CSCI570_Project_Minimum/CSCI570_Project_Minimum_Jul_14/Datapoints")
 
 class TestStringGeneration:
     """Test the string generation mechanism"""
@@ -145,7 +151,7 @@ class TestAlignmentCost:
         aligned1 = "_A_CA_CACT__G__A_C_TAC_TGACTG_GTGA__C_TACTGACTGGACTGACTACTGACTGGTGACTACT_GACTG_G"
         aligned2 = "TATTATTA_TACGCTATTATACGCGAC_GCG_GACGCGTA_T_AC__G_CT_ATTA_T_AC__GCGAC_GC_GGAC_GCG"
         cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
-        assert cost == 1296  # Expected cost from example
+        assert cost == 1296
 
 
 class TestSequenceAlignment:
@@ -226,6 +232,9 @@ class TestSequenceAlignment:
         # Verify calculated cost matches
         calculated_cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
         assert calculated_cost == cost
+
+
+
 
 
 class TestOutputFormat:
@@ -325,39 +334,64 @@ class TestIntegration:
         # This would test against actual sample files from SampleTestCases
         pass
 
-    def test_end_to_end(self, tmp_path):
+    def test_end_to_end(self):
         """Test complete pipeline from input to output"""
-        # Create input file
-        input_content = """ACTG
-3
-6
-1
-1
-TACG
-1
-2
-9
-2"""
-        input_file = tmp_path / "input.txt"
-        input_file.write_text(input_content)
+        input_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
+        output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleOutput/")
+        expected_output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
 
-        output_file = tmp_path / "output.txt"
+        # Create output directory if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
 
-        # Parse input
-        string1, string2 = parse_input_file(str(input_file))
+        # Find all input files
+        pattern = re.compile(r"^input\d+\.txt$")
+        target_files = [file_path for file_path in input_path.iterdir()
+                        if file_path.is_file() and pattern.match(file_path.name)]
 
-        # Run alignment
-        cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+        for file_path in target_files:
+            print(f"Testing {file_path.name}...")
 
-        # Write output
-        format_output(str(output_file), cost, aligned1, aligned2, 3.72, 54880)
+            # Parse input
+            string1, string2 = parse_input_file(str(file_path))
 
-        # Verify output exists and has correct format
-        assert output_file.exists()
-        lines = output_file.read_text().strip().split('\n')
-        assert len(lines) == 5
-        assert int(lines[0]) == 1296
+            # Run alignment
+            start_time = time.time()
+            min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+            cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
+            end_time = time.time()
+            time_ms = (end_time - start_time)
 
+            memory = process_memory()
+
+            # Extract file number (e.g., "input1.txt" -> "1")
+            filename_base = file_path.stem  # Gets "input1" from "input1.txt"
+            file_number = filename_base.replace('input', '')  # Gets "1"
+
+            # Write output
+            output_file = output_path / f"output{file_number}.txt"
+            format_output(str(output_file), cost, aligned1, aligned2, time_ms, memory)
+
+            # Verify against expected output
+            expected_output_file = expected_output_path / f"output{file_number}.txt"
+
+            assert expected_output_file.exists(), f"Expected output file {expected_output_file} not found"
+
+            lines = expected_output_file.read_text().strip().split('\n')
+            assert len(lines) == 5, f"Expected 5 lines in output, got {len(lines)}"
+
+            # Convert aligned lists to strings for comparison
+            aligned1_str = ''.join(aligned1)
+            aligned2_str = ''.join(aligned2)
+
+            # Compare outputs (with some tolerance for time and memory)
+            expected_cost = int(lines[0])
+            assert cost == expected_cost, f"Cost mismatch: expected {expected_cost}, got {cost}"
+
+            assert aligned1_str == lines[1], f"Aligned string 1 mismatch"
+            assert aligned2_str == lines[2], f"Aligned string 2 mismatch"
+
+            # Don't assert exact time/memory match as they vary by system
+            print(f"✓ {file_path.name} passed (cost: {cost})")
 
 class TestMemoryAndTime:
     """Test memory and time measurement functions"""
