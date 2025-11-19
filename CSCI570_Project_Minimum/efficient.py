@@ -52,70 +52,51 @@ def parse_input_file(file_path):
     return output_string1, output_string2
 
 
-def efficient_sequence_alignment(X, Y, delta, alpha):
+def sequence_alignment(X, Y, delta, alpha):
     """
-    Perform sequence alignment using dynamic programming.
-    Traceback priority: diagonal > left > up [Bois this should be same for all]
+    Perform memory-efficient sequence alignment using divide and conquer approach.
     """
-    m, n = len(X), len(Y)
 
-    dp = [[0] * (n + 1) for _ in range(2)]
+    minimum_alignment_cost = hirschberg(X, Y, delta, alpha)
 
-    # base cases
-    dp[0][0] = 0
-
-    for j in range(n + 1):
-        dp[0][j] = j * delta
-
-    # dp table
-    for i in range(1, m + 1):
-        dp[i % 2][0] = i * delta    
-        for j in range(1, n + 1):
-
-            dp[i % 2][j] = min(dp[(i - 1) % 2][j - 1] + alpha[X[i - 1], Y[j - 1]],
-                               dp[(i - 1) % 2][j] + delta,
-                               dp[i % 2][j - 1] + delta)
-
-    minimum_alignment_cost = dp[m][n]
-
+    #TODO: get alignments 
     aligned_x = []
     aligned_y = []
-
-    i, j = m, n
-    while i > 0 or j > 0:
-        if i == 0:
-            aligned_x.append('_')
-            aligned_y.append(Y[j - 1])
-            j -= 1
-        elif j == 0:
-            aligned_x.append(X[i - 1])
-            aligned_y.append('_')
-            i -= 1
-        else:
-            match_cost = dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]]
-            insert_cost = dp[i][j - 1] + delta
-
-            # Diagonal
-            if dp[i][j] == match_cost:
-                aligned_x.append(X[i - 1])
-                aligned_y.append(Y[j - 1])
-                i -= 1
-                j -= 1
-            # Left
-            elif dp[i][j] == insert_cost:
-                aligned_x.append('_')
-                aligned_y.append(Y[j - 1])
-                j -= 1
-            # Up
-            else:
-                aligned_x.append(X[i - 1])
-                aligned_y.append('_')
-                i -= 1
-
-    aligned_x.reverse()
-    aligned_y.reverse()
-
+    
     return minimum_alignment_cost, aligned_x, aligned_y
+
+
+def hirschberg(X, Y, delta, alpha):
+    """
+    Hirschberg's algorithm for memory-efficient sequence alignment.
+    """
+    if len(X) == 0:
+        return delta * len(Y)
+    if len(Y) == 0:
+        return delta * len(X)
+    if len(X) == 1:
+        cost = delta * len(Y) # all gaps
+        if len(Y) >= 1:
+            for y in Y:
+                cost = min(cost, delta * (len(Y) - 1) + alpha[X[0], y]) # one match/mismatch
+        return cost
+    
+    k = get_optimal_split_point(X, Y, delta, alpha)
+    cost = 0
+    cost += hirschberg(X[:len(X)//2], Y[:k], delta, alpha)
+    cost += hirschberg(X[len(X)//2:], Y[k:], delta, alpha)
+
+    return cost #TODO: also return alignments
+
+
+def get_optimal_split_point(X, Y, delta, alpha):
+    """
+    Helper function to find the optimal split point in Hirschberg's algorithm.
+    """
+
+    #TODO: implement this function
+
+    return 0 # Placeholder for actual implementation
 
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
@@ -155,7 +136,7 @@ def format_output(output_path, cost, aligned1, aligned2, time_ms, memory_kb):
 
 def main():
     if len(sys.argv) !=3:
-        print("Expected python3/py basic.py <input_file> <output_file>")
+        print("Expected python3/py efficient.py <input_file> <output_file>")
         sys.exit(1)
 
     input_path = sys.argv[1]
@@ -167,12 +148,12 @@ def main():
     start_time = time.time()
 
     # main function basic approach
-    min_cost, aligned1, aligned2 = efficient_sequence_alignment(string1, string2, DELTA, ALPHA)
+    min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
 
     cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
     # End
     end_time = time.time()
-    time_ms = (end_time - start_time) * 1000
+    time_ms = (end_time - start_time)
 
     # memory usage
     memory = process_memory()
