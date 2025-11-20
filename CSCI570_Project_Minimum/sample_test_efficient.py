@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 import time
 from efficient import (
-    sequence_alignment,
+    hirschberg,
     calculate_alignment_cost,
     parse_input_file,
     process_memory,
@@ -41,7 +41,7 @@ class MyTestCase(unittest.TestCase):
             print(f"Input string2: {string2}")
             # Run alignment
             start_time = time.time()
-            min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+            min_cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
             cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
             end_time = time.time()
             time_ms = (end_time - start_time)

@@ -118,10 +118,17 @@ def original_sequence_alignment(X, Y, delta, alpha) -> tuple[int, str, str]:
 
     return minimum_alignment_cost, ''.join(aligned_x), ''.join(aligned_y)
 
-def sequence_alignment(X, Y, delta, alpha) -> int:
+
+# This funciton is to find the best scores between X and all prefixes of Y
+
+
+def sequence_alignment(X, Y, delta, alpha,flag) -> list[int]:
     """
     Perform sequence alignment using dynamic programming.
     Just returns the minimum alignment cost.
+    flag:
+        0 is to find the best scores between X and all prefixes of Y
+        1 is to find the best scores between X and all suffixes of Y
     """
     m, n = len(X), len(Y)
 
@@ -138,11 +145,21 @@ def sequence_alignment(X, Y, delta, alpha) -> int:
     for i in range(1, m + 1):
         dp[i%2][0] = i * delta
         for j in range(1, n + 1):
-            dp[i%2][j] = min(dp[(i - 1)%2][j - 1] + alpha[X[i - 1], Y[j - 1]],
-                           dp[(i - 1)%2][j] + delta,
-                           dp[i%2][j - 1] + delta)
+            if flag==0:
+                dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[i - 1], Y[j - 1]],
+                               dp[(i-1)%2][j] + delta,
+                               dp[i%2][j - 1] + delta)
+            else:
+                # X[m - i], Y[n - j] means we are aligning reversed strings
+                dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[m - i], Y[n - j]],
+                               dp[(i-1)%2][j] + delta,
+                               dp[i%2][j - 1] + delta)
 
-    minimum_alignment_cost = dp[m%2][n]
+
+    # This list means that for every index i, dp[m%2][i] is the minimum cost to align X with Y[0..i]
+    # If flag==1, dp[m%2][i] is the minimum cost to align reverse X with reverse Y[0..i]
+    # -> It is same as aligning X with suffix Y[n-i..n]
+    minimum_alignment_cost = dp[m%2] 
 
     return minimum_alignment_cost
 
@@ -152,13 +169,14 @@ def hirschberg(X, Y, delta, alpha) -> tuple[int, str, str]:
     Hirschberg's algorithm for memory-efficient sequence alignment.
     Returns the aligned sequences as strings.
     """
+    
     if len(X) <=2 or len(Y) <=2:
         return original_sequence_alignment(X, Y, delta, alpha)
 
     k = get_optimal_split_point(X, Y, delta, alpha)
-
-    minimum_alignment_cost1, aligned_x1, aligned_y1 = hirschberg(X[:len(X) // 2], Y[:k], delta, alpha)
-    minimum_alignment_cost2, aligned_x2, aligned_y2 = hirschberg(X[len(X) // 2:], Y[k:], delta, alpha)
+    m = len(X)
+    minimum_alignment_cost1, aligned_x1, aligned_y1 = hirschberg(X[:m // 2], Y[:k], delta, alpha)
+    minimum_alignment_cost2, aligned_x2, aligned_y2 = hirschberg(X[m // 2:], Y[k:], delta, alpha)
     
     minimum_alignment_cost = minimum_alignment_cost1 + minimum_alignment_cost2
     aligned_x = aligned_x1 + aligned_x2
@@ -172,11 +190,12 @@ def get_optimal_split_point(X, Y, delta, alpha)-> int:
     """
     bestk=0
     best=math.inf
-    for j in range(len(Y) + 1):
-        v1=sequence_alignment(X[:len(X)//2], Y[:j], delta, alpha)
-        v2=sequence_alignment(X[len(X)//2:], Y[j:], delta, alpha)
-        if v1+v2<best:
-            best=v1+v2
+    m , n = len(X), len(Y)
+    v1=sequence_alignment(X[:m//2], Y, delta, alpha, 0)
+    v2=sequence_alignment(X[m//2:], Y, delta, alpha, 1)
+    for j in range(n+1):
+        if v1[j]+v2[n-j]<best:
+            best=v1[j]+v2[n-j]
             bestk=j
 
     return bestk
