@@ -7,7 +7,7 @@ from pathlib import  Path
 import re
 from efficient import (
     generate_string,
-    sequence_alignment,
+    hirschberg,
     calculate_alignment_cost,
     parse_input_file,
     process_memory,
@@ -159,28 +159,28 @@ class TestSequenceAlignment:
 
     def test_empty_strings(self):
         """Test with empty strings"""
-        cost, aligned1, aligned2 = sequence_alignment("", "", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("", "", DELTA, ALPHA)
         assert cost == 0
         assert aligned1 == ""
         assert aligned2 == ""
 
     def test_one_empty_string(self):
         """Test with one empty string"""
-        cost, aligned1, aligned2 = sequence_alignment("A", "", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("A", "", DELTA, ALPHA)
         assert cost == DELTA
         assert aligned1 == "A"
         assert aligned2 == "_"
 
     def test_single_character_match(self):
         """Test single matching characters"""
-        cost, aligned1, aligned2 = sequence_alignment("A", "A", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("A", "A", DELTA, ALPHA)
         assert cost == 0
         assert aligned1 == "A"
         assert aligned2 == "A"
 
     def test_single_character_mismatch(self):
         """Test single mismatching characters"""
-        cost, aligned1, aligned2 = sequence_alignment("A", "C", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("A", "C", DELTA, ALPHA)
         # Should choose minimum of: gap+gap=60 or mismatch=110
         assert cost == 60
         # Either A_, _C or _A, C_ are valid
@@ -191,19 +191,19 @@ class TestSequenceAlignment:
 
     def test_identical_strings(self):
         """Test identical strings"""
-        cost, aligned1, aligned2 = sequence_alignment("ACTG", "ACTG", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("ACTG", "ACTG", DELTA, ALPHA)
         assert cost == 0
         assert aligned1 == "ACTG"
         assert aligned2 == "ACTG"
 
     def test_alignment_length_consistency(self):
         """Test that aligned strings have equal length"""
-        cost, aligned1, aligned2 = sequence_alignment("ACTG", "TGC", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("ACTG", "TGC", DELTA, ALPHA)
         assert len(aligned1) == len(aligned2)
 
     def test_alignment_preserves_order(self):
         """Test that original characters maintain their order"""
-        cost, aligned1, aligned2 = sequence_alignment("ACT", "AGT", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("ACT", "AGT", DELTA, ALPHA)
 
         # Extract non-gap characters and verify order
         chars1 = [c for c in aligned1 if c != '_']
@@ -217,7 +217,7 @@ class TestSequenceAlignment:
         string1 = generate_string("ACTG", [3, 6, 1, 1])
         string2 = generate_string("TACG", [1, 2, 9, 2])
 
-        cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
 
         # Verify cost
         assert cost == 1296
@@ -298,7 +298,7 @@ class TestEdgeCases:
     def test_all_gaps_alignment(self):
         """Test when optimal alignment might be all gaps"""
         # Two strings with high mismatch costs
-        cost, aligned1, aligned2 = sequence_alignment("AA", "CC", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("AA", "CC", DELTA, ALPHA)
 
         # Verify cost is calculated correctly
         calculated_cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
@@ -309,7 +309,7 @@ class TestEdgeCases:
         string1 = "ACTGACTGACTG"
         string2 = "TACGTACGTACG"
 
-        cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
 
         # Basic validations
         assert len(aligned1) == len(aligned2)
@@ -319,10 +319,10 @@ class TestEdgeCases:
 
     def test_repeated_characters(self):
         """Test with repeated characters"""
-        cost, aligned1, aligned2 = sequence_alignment("AAAA", "AAAA", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("AAAA", "AAAA", DELTA, ALPHA)
         assert cost == 0
 
-        cost, aligned1, aligned2 = sequence_alignment("AAAA", "CCCC", DELTA, ALPHA)
+        cost, aligned1, aligned2 = hirschberg("AAAA", "CCCC", DELTA, ALPHA)
         assert cost > 0
 
 
@@ -337,7 +337,7 @@ class TestIntegration:
     def test_end_to_end(self):
         """Test complete pipeline from input to output"""
         input_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
-        output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleOutput/")
+        output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleEfficientOutput/")
         expected_output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
 
         # Create output directory if it doesn't exist
@@ -356,7 +356,7 @@ class TestIntegration:
 
             # Run alignment
             start_time = time.time()
-            min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+            min_cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
             cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
             end_time = time.time()
             time_ms = (end_time - start_time)
@@ -387,8 +387,9 @@ class TestIntegration:
             expected_cost = int(lines[0])
             assert cost == expected_cost, f"Cost mismatch: expected {expected_cost}, got {cost}"
 
-            assert aligned1_str == lines[1], f"Aligned string 1 mismatch"
-            assert aligned2_str == lines[2], f"Aligned string 2 mismatch"
+            # Since there can be multiple correct answers, so we leave this out
+            # assert aligned1_str == lines[1], f"Aligned string 1 mismatch"
+            # assert aligned2_str == lines[2], f"Aligned string 2 mismatch"
 
             # Don't assert exact time/memory match as they vary by system
             print(f"✓ {file_path.name} passed (cost: {cost})")
