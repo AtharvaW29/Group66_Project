@@ -115,7 +115,7 @@ def sequence_alignment(X, Y, delta, alpha):
     aligned_x.reverse()
     aligned_y.reverse()
 
-    return minimum_alignment_cost, aligned_x, aligned_y
+    return minimum_alignment_cost, ''.join(aligned_x), ''.join(aligned_y)
 
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):

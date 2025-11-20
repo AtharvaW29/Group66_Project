@@ -2,6 +2,7 @@ import os.path
 import sys
 import time
 import psutil
+import math
 from pathlib import Path
 
 # Constants
@@ -16,7 +17,7 @@ ALPHA = {
 
 # input_dir = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases")
 
-def generate_string(base_string, indices):
+def generate_string(base_string, indices) -> str:
     for i in indices:
         first_part = base_string[:i + 1]
         second_part = base_string[i + 1:]
@@ -27,7 +28,7 @@ def generate_string(base_string, indices):
     return result
 
 
-def parse_input_file(file_path):
+def parse_input_file(file_path) -> tuple[str, str]:
     with open(file_path, 'r') as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
 
@@ -52,8 +53,7 @@ def parse_input_file(file_path):
 
     return output_string1, output_string2
 
-
-def sequence_alignment(X, Y, delta, alpha):
+def original_sequence_alignment(X, Y, delta, alpha) -> tuple[int, str, str]:
     """
     Perform sequence alignment using dynamic programming.
     Traceback priority: diagonal > left > up [Bois this should be same for all]
@@ -72,6 +72,7 @@ def sequence_alignment(X, Y, delta, alpha):
     # dp table
     for i in range(1, m + 1):
         for j in range(1, n + 1):
+
             dp[i][j] = min(dp[i - 1][j - 1] + alpha[X[i - 1], Y[j - 1]],
                            dp[i - 1][j] + delta,
                            dp[i][j - 1] + delta)
@@ -115,52 +116,70 @@ def sequence_alignment(X, Y, delta, alpha):
     aligned_x.reverse()
     aligned_y.reverse()
 
-    return minimum_alignment_cost, aligned_x, aligned_y
+    return minimum_alignment_cost, ''.join(aligned_x), ''.join(aligned_y)
 
-
-def mem_efficient_sequence_alignment(X, Y, delta, alpha):
+def sequence_alignment(X, Y, delta, alpha) -> int:
     """
-    Perform memory-efficient sequence alignment using divide and conquer approach.
+    Perform sequence alignment using dynamic programming.
+    Just returns the minimum alignment cost.
     """
+    m, n = len(X), len(Y)
 
-    minimum_alignment_cost = hirschberg(X, Y, delta, alpha)
+    dp = [[0] * (n + 1) for _ in range(2)]
 
-    aligned_x = []
-    aligned_y = []
+    # base cases
 
-    return minimum_alignment_cost, aligned_x, aligned_y
+    dp[0][0] = 0
+
+    for j in range(n + 1):
+        dp[0][j] = j * delta
+
+    # dp table
+    for i in range(1, m + 1):
+        dp[i%2][0] = i * delta
+        for j in range(1, n + 1):
+            dp[i%2][j] = min(dp[(i - 1)%2][j - 1] + alpha[X[i - 1], Y[j - 1]],
+                           dp[(i - 1)%2][j] + delta,
+                           dp[i%2][j - 1] + delta)
+
+    minimum_alignment_cost = dp[m%2][n]
+
+    return minimum_alignment_cost
 
 
-def hirschberg(X, Y, delta, alpha):
+def hirschberg(X, Y, delta, alpha) -> tuple[int, str, str]:
     """
     Hirschberg's algorithm for memory-efficient sequence alignment.
+    Returns the aligned sequences as strings.
     """
-    if len(X) == 0:
-        return delta * len(Y)
-    if len(Y) == 0:
-        return delta * len(X)
-    if len(X) == 1:
-        cost = delta * len(Y)  # all gaps
-        if len(Y) >= 1:
-            for y in Y:
-                cost = min(cost, delta * (len(Y) - 1) + alpha[X[0], y])  # one match/mismatch
-        return cost
+    if len(X) <=2 or len(Y) <=2:
+        return original_sequence_alignment(X, Y, delta, alpha)
 
     k = get_optimal_split_point(X, Y, delta, alpha)
-    cost = 0
-    cost += hirschberg(X[:len(X) // 2], Y[:k], delta, alpha)
-    cost += hirschberg(X[len(X) // 2:], Y[k:], delta, alpha)
 
-    return cost
+    minimum_alignment_cost1, aligned_x1, aligned_y1 = hirschberg(X[:len(X) // 2], Y[:k], delta, alpha)
+    minimum_alignment_cost2, aligned_x2, aligned_y2 = hirschberg(X[len(X) // 2:], Y[k:], delta, alpha)
+    
+    minimum_alignment_cost = minimum_alignment_cost1 + minimum_alignment_cost2
+    aligned_x = aligned_x1 + aligned_x2
+    aligned_y = aligned_y1 + aligned_y2
+    
+    return minimum_alignment_cost, aligned_x, aligned_y
 
-
-def get_optimal_split_point(X, Y, delta, alpha):
+def get_optimal_split_point(X, Y, delta, alpha)-> int:
     """
     Helper function to find the optimal split point in Hirschberg's algorithm.
     """
+    bestk=0
+    best=math.inf
+    for j in range(len(Y) + 1):
+        v1=sequence_alignment(X[:len(X)//2], Y[:j], delta, alpha)
+        v2=sequence_alignment(X[len(X)//2:], Y[j:], delta, alpha)
+        if v1+v2<best:
+            best=v1+v2
+            bestk=j
 
-
-    return 0  # Placeholder for actual implementation
+    return bestk
 
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
