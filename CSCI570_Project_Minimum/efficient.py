@@ -155,10 +155,6 @@ def sequence_alignment(X, Y, delta, alpha,flag) -> list[int]:
                                dp[(i-1)%2][j] + delta,
                                dp[i%2][j - 1] + delta)
 
-
-    # This list means that for every index i, dp[m%2][i] is the minimum cost to align X with Y[0..i]
-    # If flag==1, dp[m%2][i] is the minimum cost to align reverse X with reverse Y[0..i]
-    # -> It is same as aligning X with suffix Y[n-i..n]
     minimum_alignment_cost = dp[m%2] 
 
     return minimum_alignment_cost
@@ -200,6 +196,26 @@ def get_optimal_split_point(X, Y, delta, alpha)-> int:
 
     return bestk
 
+# def recursive_hirscberg(X, Y, delta, alpha)-> tuple[int, str, str]:
+#     """
+#     Recursive Hirschberg's algorithm for optimal sequence alignment
+#     :param X:
+#     :param Y:
+#     :param delta:
+#     :param alpha:
+#     :return: cost, str1, str2
+#     """
+#     if len(X) <=2 or len(Y) <= 2:
+#         return  original_sequence_alignment(X, Y, delta, alpha)
+#     x_split_point = len(X) // 2 + len(X) % 2
+#     x_left = X[:x_split_point]
+#     x_right = X[x_split_point:]
+#
+#
+#
+# def recursive_optimal_split_point(X, Y, delta, alpha)-> int:
+#
+
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
     cost = 0
@@ -238,7 +254,7 @@ def format_output(output_path, cost, aligned1, aligned2, time_ms, memory_kb):
 
 def main():
     if len(sys.argv) != 3:
-        print("Expected python3/py basic.py <input_file> <output_file>")
+        print("Expected python3/py efficient.py <input_file> <output_file>")
         sys.exit(1)
 
     input_path = sys.argv[1]
@@ -249,13 +265,13 @@ def main():
     # Start
     start_time = time.time()
 
-    # main function basic approach
-    min_cost, aligned1, aligned2 = sequence_alignment(string1, string2, DELTA, ALPHA)
+    # main function
+    min_cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
 
     cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
     # End
     end_time = time.time()
-    time_ms = (end_time - start_time)
+    time_ms = (end_time - start_time) * 1000
 
     # memory usage
     memory = process_memory()

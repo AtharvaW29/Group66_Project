@@ -359,7 +359,7 @@ class TestIntegration:
             min_cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
             cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
             end_time = time.time()
-            time_ms = (end_time - start_time)
+            time_ms = (end_time - start_time) * 1000
 
             memory = process_memory()
 
