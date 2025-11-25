@@ -1,134 +1,393 @@
 from pathlib import Path
 import re
 import plotly.graph_objects as go
-
+from plotly.subplots import make_subplots
 
 basic_path = Path("CSCI570_Project_Minimum_Jul_14/Output")
-efficient_path =Path("CSCI570_Project_Minimum_Jul_14/EfficientOutput")
+efficient_path = Path("CSCI570_Project_Minimum_Jul_14/EfficientOutput")
+
+
+def extract_file_number(filename):
+    """Extract numeric part from filename for sorting"""
+    match = re.search(r'\d+', filename)
+    return int(match.group()) if match else 0
+
+
+def read_output_files(file_paths):
+    """Read output files and return sorted data"""
+    data = []
+
+    for file_path in file_paths:
+        with open(file_path, 'r') as f:
+            lines = [line.strip() for line in f.readlines() if line.strip()]
+
+            if len(lines) >= 5:
+                cost = float(lines[0])
+                str1 = lines[1]
+                str2 = lines[2]
+                time_ms = float(lines[3])
+                memory_kb = float(lines[4])
+
+                # Calculate problem size
+                size = len(str1) * len(str2)
+
+                data.append({
+                    'file': file_path.name,
+                    'file_num': extract_file_number(file_path.name),
+                    'cost': cost,
+                    'str1': str1,
+                    'str2': str2,
+                    'len1': len(str1),
+                    'len2': len(str2),
+                    'size': size,
+                    'time_ms': time_ms,
+                    'memory_kb': memory_kb
+                })
+
+    # Sort by problem size
+    data.sort(key=lambda x: x['size'])
+    return data
+
 
 def main():
-        pattern = re.compile(r"^outputin\d+\.txt$")
+    pattern = re.compile(r"^outputin\d+\.txt$")
 
-        basic_files = [file_path for file_path in basic_path.iterdir()
+    basic_files = [file_path for file_path in basic_path.iterdir()
+                   if file_path.is_file() and pattern.match(file_path.name)]
+
+    efficient_files = [file_path for file_path in efficient_path.iterdir()
                        if file_path.is_file() and pattern.match(file_path.name)]
 
-        efficient_files = [file_path for file_path in efficient_path.iterdir()
-                       if file_path.is_file() and pattern.match(file_path.name)]
+    if not basic_files:
+        print(f"No basic output files found in {basic_path}")
+        return
 
-        basic_times = [0.0] * (len(basic_files) + 1)
-        efficient_times = [0.0] * (len(efficient_files) + 1)
+    if not efficient_files:
+        print(f"No efficient output files found in {efficient_path}")
+        return
 
-        basic_memory = [0.0] * (len(basic_files) + 1)
-        efficient_memory = [0.0] * (len(efficient_files) + 1)
+    # Read and sort data
+    basic_data = read_output_files(basic_files)
+    efficient_data = read_output_files(efficient_files)
 
-        basic_costs = [0.0] * (len(basic_files) + 1)
-        efficient_costs = [0.0] * (len(efficient_files) + 1)
+    # Match data points by size
+    # Assuming both basic and efficient have the same test cases
+    min_length = min(len(basic_data), len(efficient_data))
+    basic_data = basic_data[:min_length]
+    efficient_data = efficient_data[:min_length]
 
-        basic_strings1 = [""] * (len(basic_files) + 1)
-        efficient_strings1 = [""] * (len(efficient_files) + 1)
+    # Extract data for plotting
+    problem_sizes = [d['size'] for d in basic_data]
+    size_labels = [f"{d['len1']}×{d['len2']}" for d in basic_data]
 
-        basic_strings2 = [""] * (len(basic_files) + 1)
-        efficient_strings2 = [""] * (len(efficient_files) + 1)
+    basic_times = [d['time_ms'] for d in basic_data]
+    efficient_times = [d['time_ms'] for d in efficient_data]
 
-        for basic_file in basic_files:
-            with open(basic_file, 'r') as f:
-                lines = [line.strip() for line in f.readlines() if line.strip()]
-                cost = lines[0]
-                str1 = lines[1]
-                str2 = lines[2]
-                time_ms = lines[3]
-                mem = lines[4]
-                basic_times.append(float(time_ms))
-                basic_memory.append(float(mem))
-                basic_costs.append(float(cost))
-                basic_strings1.append(str(str1))
-                basic_strings2.append(str(str2))
+    basic_memory = [d['memory_kb'] for d in basic_data]
+    efficient_memory = [d['memory_kb'] for d in efficient_data]
 
-        for efficient_file in efficient_files:
-            with open(efficient_file, 'r') as f:
-                lines = [line.strip() for line in f.readlines() if line.strip()]
-                cost = lines[0]
-                str1 = lines[1]
-                str2 = lines[2]
-                time_ms = lines[3]
-                mem = lines[4]
-                efficient_times.append(float(time_ms))
-                efficient_memory.append(float(mem))
-                efficient_costs.append(float(cost))
-                efficient_strings1.append(str(str1))
-                efficient_strings2.append(str(str2))
+    basic_costs = [d['cost'] for d in basic_data]
+    efficient_costs = [d['cost'] for d in efficient_data]
 
-        basic_times_clean = [t for t in basic_times if t != 0.0]
-        efficient_times_clean = [t for t in efficient_times if t != 0.0]
+    # Print summary
+    print(f"\n{'=' * 80}")
+    print("DATA SUMMARY (sorted by problem size)")
+    print(f"{'=' * 80}")
+    print(f"{'Index':<8} {'Size':<12} {'Basic Time':<15} {'Eff Time':<15} {'Basic Mem':<15} {'Eff Mem':<15}")
+    print(f"{'-' * 80}")
+    for i in range(len(basic_data)):
+        print(f"{i + 1:<8} {size_labels[i]:<12} {basic_times[i]:<15.2f} {efficient_times[i]:<15.2f} "
+              f"{basic_memory[i]:<15.0f} {efficient_memory[i]:<15.0f}")
+    print(f"{'=' * 80}\n")
 
-        basic_memory_clean = [m for m in basic_memory if m != 0.0]
-        efficient_memory_clean = [m for m in efficient_memory if m != 0.0]
+    # Verify costs match
+    cost_mismatches = sum(1 for i in range(len(basic_data)) if basic_costs[i] != efficient_costs[i])
+    if cost_mismatches > 0:
+        print(f"⚠️  WARNING: {cost_mismatches} cost mismatches found between basic and efficient!")
+    else:
+        print("✓ All costs match between basic and efficient versions")
 
-        n = min(len(basic_times_clean), len(efficient_times_clean))
-        basic_times_clean = basic_times_clean[:n]
-        efficient_times_clean = efficient_times_clean[:n]
+    # ------------------------- PLOT 1: TIME COMPARISON -------------------------
+    time_fig = go.Figure()
 
-        m = min(len(basic_memory_clean), len(efficient_memory_clean))
-        basic_memory_clean = basic_memory_clean[:m]
-        efficient_memory_clean = efficient_memory_clean[:m]
-
-        # ------------------------- PLOT 1: TIME COMPARISON -------------------------
-        time_fig = go.Figure()
-
-        time_fig.add_trace(
-            go.Scatter(
-                x=list(range(1, n + 1)),
-                y=basic_times_clean,
-                mode="lines+markers",
-                name="Basic Times"
-            )
+    time_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(basic_times) + 1)),
+            y=basic_times,
+            mode="lines+markers",
+            name="Basic Times",
+            line=dict(color='blue', width=2),
+            marker=dict(size=8),
+            hovertemplate='<b>Test %{x}</b><br>' +
+                          'Size: ' + '%{text}<br>' +
+                          'Time: %{y:.2f} ms<br>' +
+                          '<extra></extra>',
+            text=size_labels
         )
+    )
 
-        time_fig.add_trace(
-            go.Scatter(
-                x=list(range(1, n + 1)),
-                y=efficient_times_clean,
-                mode="lines+markers",
-                name="Efficient Times"
-            )
+    time_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(efficient_times) + 1)),
+            y=efficient_times,
+            mode="lines+markers",
+            name="Efficient Times",
+            line=dict(color='red', width=2),
+            marker=dict(size=8),
+            hovertemplate='<b>Test %{x}</b><br>' +
+                          'Size: ' + '%{text}<br>' +
+                          'Time: %{y:.2f} ms<br>' +
+                          '<extra></extra>',
+            text=size_labels
         )
+    )
 
-        time_fig.update_layout(
-            title="Basic vs Efficient — Execution Time Comparison",
-            xaxis_title="Test Case Index",
-            yaxis_title="Time (ms)",
-            template="plotly_white",
+    time_fig.update_layout(
+        title={
+            'text': "Basic vs Efficient — Execution Time Comparison",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        xaxis_title="Test Case Index (sorted by problem size)",
+        yaxis_title="Time (ms)",
+        template="plotly_white",
+        hovermode='x unified',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
         )
-        time_fig.show()
+    )
+    time_fig.show()
 
-        # ------------------------- PLOT 2: MEMORY COMPARISON -------------------------
-        mem_fig = go.Figure()
+    # ------------------------- PLOT 2: MEMORY COMPARISON -------------------------
+    mem_fig = go.Figure()
 
-        mem_fig.add_trace(
-            go.Scatter(
-                x=list(range(1, m + 1)),
-                y=basic_memory_clean,
-                mode="lines+markers",
-                name="Basic Memory"
-            )
+    mem_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(basic_memory) + 1)),
+            y=basic_memory,
+            mode="lines+markers",
+            name="Basic Memory",
+            line=dict(color='blue', width=2),
+            marker=dict(size=8),
+            hovertemplate='<b>Test %{x}</b><br>' +
+                          'Size: ' + '%{text}<br>' +
+                          'Memory: %{y:.0f} KB<br>' +
+                          '<extra></extra>',
+            text=size_labels
         )
+    )
 
-        mem_fig.add_trace(
-            go.Scatter(
-                x=list(range(1, m + 1)),
-                y=efficient_memory_clean,
-                mode="lines+markers",
-                name="Efficient Memory"
-            )
+    mem_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(efficient_memory) + 1)),
+            y=efficient_memory,
+            mode="lines+markers",
+            name="Efficient Memory",
+            line=dict(color='red', width=2),
+            marker=dict(size=8),
+            hovertemplate='<b>Test %{x}</b><br>' +
+                          'Size: ' + '%{text}<br>' +
+                          'Memory: %{y:.0f} KB<br>' +
+                          '<extra></extra>',
+            text=size_labels
         )
+    )
 
-        mem_fig.update_layout(
-            title="Basic vs Efficient — Memory Usage Comparison",
-            xaxis_title="Test Case Index",
-            yaxis_title="Memory (MB or KB depending on your output)",
-            template="plotly_white",
+    mem_fig.update_layout(
+        title={
+            'text': "Basic vs Efficient — Memory Usage Comparison",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        xaxis_title="Test Case Index (sorted by problem size)",
+        yaxis_title="Memory (KB depending on type ×10³ = MB)",
+        template="plotly_white",
+        hovermode='x unified',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
         )
-        mem_fig.show()
+    )
+    mem_fig.show()
+
+    # ------------------------- PLOT 3: COMBINED VIEW (2x1 SUBPLOTS) -------------------------
+    combined_fig = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=("Execution Time Comparison", "Memory Usage Comparison"),
+        vertical_spacing=0.12
+    )
+
+    # Add time traces
+    combined_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(basic_times) + 1)),
+            y=basic_times,
+            mode="lines+markers",
+            name="Basic Times",
+            line=dict(color='blue', width=2),
+            marker=dict(size=6)
+        ),
+        row=1, col=1
+    )
+
+    combined_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(efficient_times) + 1)),
+            y=efficient_times,
+            mode="lines+markers",
+            name="Efficient Times",
+            line=dict(color='red', width=2),
+            marker=dict(size=6)
+        ),
+        row=1, col=1
+    )
+
+    # Add memory traces
+    combined_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(basic_memory) + 1)),
+            y=basic_memory,
+            mode="lines+markers",
+            name="Basic Memory",
+            line=dict(color='blue', width=2),
+            marker=dict(size=6),
+            showlegend=False
+        ),
+        row=2, col=1
+    )
+
+    combined_fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(efficient_memory) + 1)),
+            y=efficient_memory,
+            mode="lines+markers",
+            name="Efficient Memory",
+            line=dict(color='red', width=2),
+            marker=dict(size=6),
+            showlegend=False
+        ),
+        row=2, col=1
+    )
+
+    combined_fig.update_xaxes(title_text="Test Case Index (sorted by problem size)", row=1, col=1)
+    combined_fig.update_xaxes(title_text="Test Case Index (sorted by problem size)", row=2, col=1)
+    combined_fig.update_yaxes(title_text="Time (ms)", row=1, col=1)
+    combined_fig.update_yaxes(title_text="Memory (KB)", row=2, col=1)
+
+    combined_fig.update_layout(
+        title={
+            'text': "Basic vs Efficient Algorithm Comparison",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        height=800,
+        template="plotly_white",
+        showlegend=True
+    )
+    combined_fig.show()
+
+    # ------------------------- PLOT 4: TIME vs PROBLEM SIZE -------------------------
+    size_time_fig = go.Figure()
+
+    size_time_fig.add_trace(
+        go.Scatter(
+            x=problem_sizes,
+            y=basic_times,
+            mode="lines+markers",
+            name="Basic Times",
+            line=dict(color='blue', width=2),
+            marker=dict(size=8)
+        )
+    )
+
+    size_time_fig.add_trace(
+        go.Scatter(
+            x=problem_sizes,
+            y=efficient_times,
+            mode="lines+markers",
+            name="Efficient Times",
+            line=dict(color='red', width=2),
+            marker=dict(size=8)
+        )
+    )
+
+    size_time_fig.update_layout(
+        title={
+            'text': "Execution Time vs Problem Size",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        xaxis_title="Problem Size (m × n)",
+        yaxis_title="Time (ms)",
+        template="plotly_white",
+        hovermode='x unified'
+    )
+    size_time_fig.show()
+
+    # ------------------------- PLOT 5: MEMORY vs PROBLEM SIZE -------------------------
+    size_mem_fig = go.Figure()
+
+    size_mem_fig.add_trace(
+        go.Scatter(
+            x=problem_sizes,
+            y=basic_memory,
+            mode="lines+markers",
+            name="Basic Memory",
+            line=dict(color='blue', width=2),
+            marker=dict(size=8)
+        )
+    )
+
+    size_mem_fig.add_trace(
+        go.Scatter(
+            x=problem_sizes,
+            y=efficient_memory,
+            mode="lines+markers",
+            name="Efficient Memory",
+            line=dict(color='red', width=2),
+            marker=dict(size=8)
+        )
+    )
+
+    size_mem_fig.update_layout(
+        title={
+            'text': "Memory Usage vs Problem Size",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        xaxis_title="Problem Size (m × n)",
+        yaxis_title="Memory (KB)",
+        template="plotly_white",
+        hovermode='x unified'
+    )
+    size_mem_fig.show()
+
+    # ------------------------- STATISTICS -------------------------
+    print(f"\n{'=' * 80}")
+    print("PERFORMANCE STATISTICS")
+    print(f"{'=' * 80}")
+
+    avg_basic_time = sum(basic_times) / len(basic_times)
+    avg_efficient_time = sum(efficient_times) / len(efficient_times)
+
+    avg_basic_mem = sum(basic_memory) / len(basic_memory)
+    avg_efficient_mem = sum(efficient_memory) / len(efficient_memory)
+
+    print(f"Average Basic Time:      {avg_basic_time:.2f} ms")
+    print(f"Average Efficient Time:  {avg_efficient_time:.2f} ms")
+    print(f"Time Ratio (Eff/Basic):  {avg_efficient_time / avg_basic_time:.2f}x")
+    print()
+    print(f"Average Basic Memory:    {avg_basic_mem:.0f} KB")
+    print(f"Average Efficient Memory:{avg_efficient_mem:.0f} KB")
+    print(f"Memory Ratio (Eff/Basic):{avg_efficient_mem / avg_basic_mem:.2f}x")
+    print(f"Memory Saved:            {avg_basic_mem - avg_efficient_mem:.0f} KB "
+          f"({(1 - avg_efficient_mem / avg_basic_mem) * 100:.1f}%)")
+    print(f"{'=' * 80}\n")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import sys
 import time
 import psutil
 import math
-from pathlib import Path
 
 # Constants
 DELTA = 30
@@ -22,10 +21,7 @@ def generate_string(base_string, indices) -> str:
         first_part = base_string[:i + 1]
         second_part = base_string[i + 1:]
         base_string = first_part + base_string + second_part
-
-    result = base_string
-
-    return result
+    return base_string
 
 
 def parse_input_file(file_path) -> tuple[str, str]:
@@ -132,32 +128,47 @@ def sequence_alignment(X, Y, delta, alpha,flag) -> list[int]:
     """
     m, n = len(X), len(Y)
 
-    dp = [[0] * (n + 1) for _ in range(2)]
+    prev = [j * delta for j in range(n + 1)]
+    curr = [0] * (n + 1)
 
-    # base cases
-
-    dp[0][0] = 0
-
-    for j in range(n + 1):
-        dp[0][j] = j * delta
-
-    # dp table
+    # dp = [[0] * (n + 1) for _ in range(2)]
+    #
+    # # base cases
+    #
+    # dp[0][0] = 0
+    #
+    # for j in range(n + 1):
+    #     dp[0][j] = j * delta
+    #
+    # # dp table
+    # for i in range(1, m + 1):
+    #     dp[i%2][0] = i * delta
+    #     for j in range(1, n + 1):
+    #         if flag==0:
+    #             dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[i - 1], Y[j - 1]],
+    #                            dp[(i-1)%2][j] + delta,
+    #                            dp[i%2][j - 1] + delta)
+    #         else:
+    #             # X[m - i], Y[n - j] means we are aligning reversed strings
+    #             dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[m - i], Y[n - j]],
+    #                            dp[(i-1)%2][j] + delta,
+    #                            dp[i%2][j - 1] + delta)
+    #
+    # minimum_alignment_cost = dp[m%2]
     for i in range(1, m + 1):
-        dp[i%2][0] = i * delta
+        curr[0] = i * delta
         for j in range(1, n + 1):
-            if flag==0:
-                dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[i - 1], Y[j - 1]],
-                               dp[(i-1)%2][j] + delta,
-                               dp[i%2][j - 1] + delta)
+            if flag == 0:
+                match_cost = alpha[X[i - 1], Y[j - 1]]
             else:
-                # X[m - i], Y[n - j] means we are aligning reversed strings
-                dp[i%2][j] = min(dp[(i-1)%2][j - 1] + alpha[X[m - i], Y[n - j]],
-                               dp[(i-1)%2][j] + delta,
-                               dp[i%2][j - 1] + delta)
+                match_cost = alpha[X[m - i], Y[n - j]]
 
-    minimum_alignment_cost = dp[m%2] 
+            curr[j] = min(prev[j - 1] + match_cost,
+                          prev[j] + delta,
+                          curr[j - 1] + delta)
+        prev, curr = curr, prev
 
-    return minimum_alignment_cost
+    return prev
 
 
 def hirschberg(X, Y, delta, alpha) -> tuple[int, str, str]:
@@ -195,27 +206,6 @@ def get_optimal_split_point(X, Y, delta, alpha)-> int:
             bestk=j
 
     return bestk
-
-# def recursive_hirscberg(X, Y, delta, alpha)-> tuple[int, str, str]:
-#     """
-#     Recursive Hirschberg's algorithm for optimal sequence alignment
-#     :param X:
-#     :param Y:
-#     :param delta:
-#     :param alpha:
-#     :return: cost, str1, str2
-#     """
-#     if len(X) <=2 or len(Y) <= 2:
-#         return  original_sequence_alignment(X, Y, delta, alpha)
-#     x_split_point = len(X) // 2 + len(X) % 2
-#     x_left = X[:x_split_point]
-#     x_right = X[x_split_point:]
-#
-#
-#
-# def recursive_optimal_split_point(X, Y, delta, alpha)-> int:
-#
-
 
 def calculate_alignment_cost(aligned1, aligned2, delta, alpha):
     cost = 0
