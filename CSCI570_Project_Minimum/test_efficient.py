@@ -337,7 +337,7 @@ class TestIntegration:
     def test_end_to_end(self):
         """Test complete pipeline from input to output"""
         input_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
-        output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleOutput/")
+        output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleEfficientOutput/")
         expected_output_path = Path("CSCI570_Project_Minimum_Jul_14/SampleTestCases/")
 
         # Create output directory if it doesn't exist
@@ -359,7 +359,7 @@ class TestIntegration:
             min_cost, aligned1, aligned2 = hirschberg(string1, string2, DELTA, ALPHA)
             cost = calculate_alignment_cost(aligned1, aligned2, DELTA, ALPHA)
             end_time = time.time()
-            time_ms = (end_time - start_time)
+            time_ms = (end_time - start_time) * 1000
 
             memory = process_memory()
 
@@ -387,8 +387,9 @@ class TestIntegration:
             expected_cost = int(lines[0])
             assert cost == expected_cost, f"Cost mismatch: expected {expected_cost}, got {cost}"
 
-            assert aligned1_str == lines[1], f"Aligned string 1 mismatch"
-            assert aligned2_str == lines[2], f"Aligned string 2 mismatch"
+            # Since there can be multiple correct answers, so we leave this out
+            # assert aligned1_str == lines[1], f"Aligned string 1 mismatch"
+            # assert aligned2_str == lines[2], f"Aligned string 2 mismatch"
 
             # Don't assert exact time/memory match as they vary by system
             print(f"✓ {file_path.name} passed (cost: {cost})")
