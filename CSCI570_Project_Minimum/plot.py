@@ -29,7 +29,7 @@ def read_output_files(file_paths):
                 memory_kb = float(lines[4])
 
                 # Calculate problem size
-                size = len(str1) * len(str2)
+                size = len(str1) + len(str2)
 
                 data.append({
                     'file': file_path.name,
@@ -78,7 +78,7 @@ def main():
 
     # Extract data for plotting
     problem_sizes = [d['size'] for d in basic_data]
-    size_labels = [f"{d['len1']}×{d['len2']}" for d in basic_data]
+    size_labels = [f"{d['len1']}+{d['len2']}" for d in basic_data]
 
     basic_times = [d['time_ms'] for d in basic_data]
     efficient_times = [d['time_ms'] for d in efficient_data]
@@ -322,7 +322,7 @@ def main():
             'x': 0.5,
             'xanchor': 'center'
         },
-        xaxis_title="Problem Size (m × n)",
+        xaxis_title="Problem Size (m + n)",
         yaxis_title="Time (ms)",
         template="plotly_white",
         hovermode='x unified'
@@ -360,7 +360,7 @@ def main():
             'x': 0.5,
             'xanchor': 'center'
         },
-        xaxis_title="Problem Size (m × n)",
+        xaxis_title="Problem Size (m + n)",
         yaxis_title="Memory (KB)",
         template="plotly_white",
         hovermode='x unified'
